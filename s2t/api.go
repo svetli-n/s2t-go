@@ -15,9 +15,11 @@ import (
 const resourcesDir = "s2t/resources"
 const transcriptFileName = "transcript.txt"
 const audioFileName = "audio-short.wav"
+const emailsFileName = "emails.txt"
 
 var audioFilePath = filepath.Join(resourcesDir, audioFileName)
 var transcriptFilePath = filepath.Join(resourcesDir, transcriptFileName)
+var emailsFilePath = filepath.Join(resourcesDir, emailsFileName)
 
 func Convert(audio []byte) ([]string, error) {
 	ctx := context.Background()
@@ -68,10 +70,10 @@ func LoadAudio() ([]byte, error) {
 	return data, nil
 }
 
-func WriteTranscript(transcript []string) error {
+func WriteTranscript(transcript []string, emails []string) error {
 	f, err := os.OpenFile(transcriptFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
 	if err != nil {
-		log.Fatalf("Failed to open transcript file: %v with err: %v", transcriptFilePath, err)
+		log.Fatalf("Failed to open file: %v with err: %v", transcriptFilePath, err)
 		return err
 	}
 	defer f.Sync()
@@ -79,6 +81,21 @@ func WriteTranscript(transcript []string) error {
 
 	for _, line := range transcript {
 		_, err := f.WriteString(line)
+		if err != nil {
+			return err
+		}
+	}
+
+	f, err = os.OpenFile(emailsFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, os.ModePerm)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v with err: %v", transcriptFilePath, err)
+		return err
+	}
+	defer f.Sync()
+	defer f.Close()
+
+	for _, email := range emails {
+		_, err := f.WriteString(email + "\n")
 		if err != nil {
 			return err
 		}
