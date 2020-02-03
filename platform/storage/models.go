@@ -6,3 +6,9 @@ type Transcript struct {
 	OrgEmail string   `json:"org_email"`
 	Emails   []string `json:"emails"`
 }
+
+type Confirmation struct {
+	Emails map[string]bool
+	Total  int
+	Done   bool
+}

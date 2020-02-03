@@ -11,12 +11,14 @@ import (
 const resourcesDir = "platform/storage/resources"
 const transcriptFileName = "transcript.txt"
 const transcriptJSONFileName = "transcript.json"
+const confirmationJSONFileName = "confirmation.json"
 const audioFileName = "audio-short.wav"
 const emailsFileName = "emails.txt"
 
 var audioFilePath = filepath.Join(resourcesDir, audioFileName)
 var transcriptFilePath = filepath.Join(resourcesDir, transcriptFileName)
 var transcriptJSONFilePath = filepath.Join(resourcesDir, transcriptJSONFileName)
+var confirmationJSONFilePath = filepath.Join(resourcesDir, confirmationJSONFileName)
 var emailsFilePath = filepath.Join(resourcesDir, emailsFileName)
 
 func LoadAudio() ([]byte, error) {
@@ -56,4 +58,33 @@ func LoadTranscript() (Transcript, error) {
 		return t, err
 	}
 	return t, nil
+}
+
+func SaveConfirmation(confirmation Confirmation) error {
+	f, err := os.OpenFile(confirmationJSONFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v with err: %v", confirmationJSONFilePath, err)
+		return err
+	}
+	defer f.Sync()
+	defer f.Close()
+
+	e := json.NewEncoder(f)
+	e.SetIndent("", "\t")
+	if err = e.Encode(confirmation); err != nil {
+		return err
+	}
+	return nil
+}
+
+func LoadConfirmation() (Confirmation, error) {
+	c := Confirmation{}
+	trans, err := ioutil.ReadFile(confirmationJSONFilePath)
+	if err != nil {
+		return c, err
+	}
+	if err := json.Unmarshal(trans, &c); err != nil {
+		return c, err
+	}
+	return c, nil
 }

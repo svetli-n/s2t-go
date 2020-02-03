@@ -1,12 +1,18 @@
 package edit
 
 import (
-	"errors"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"meeting-app/platform/storage"
 	"net/http"
-	"strings"
+	"net/smtp"
+	"os"
+)
+
+const (
+	smtpAddr     = "smtp.gmail.com"
+	smtpAddrPort = smtpAddr + ":587"
 )
 
 func Start() error {
@@ -35,30 +41,21 @@ func edit(w http.ResponseWriter, req *http.Request) {
 		if err = storage.SaveTranscript(t); err != nil {
 			log.Fatalf("Failed to save transcript: %v", err)
 		}
-		log.Println(t)
-		emailPrticipants(t)
+		if err = emailParticipants(t); err != nil {
+			log.Println(err.Error())
+		}
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }
 
-func emailPrticipants(t storage.Transcript) error {
-	errs := make(map[string]string)
+func emailParticipants(t storage.Transcript) error {
+	a := smtp.PlainAuth("", os.Getenv("SMTP_USERNAME"), os.Getenv("SMTP_PWD"), smtpAddr)
 	for _, email := range t.Emails {
-		if err := sendSignEmail(email, t.Edited); err != nil {
-			errs[email] = err.Error()
+		msg := t.Edited + "\n" + "Confirm: http://localhost:8789/sign?email=" + base64.StdEncoding.EncodeToString([]byte(email))
+		if err := smtp.SendMail(smtpAddrPort, a, "meetingapp3@gmail.com", t.Emails, []byte(msg)); err != nil {
+			return err
 		}
 	}
-	if len(errs) > 0 {
-		errStr := make([]string, len(errs))
-		for k, val := range errs {
-			errStr = append(errStr, k, ":", val, " ")
-		}
-		return errors.New(strings.Join(errStr, " "))
-	}
-	return nil
-}
-
-func sendSignEmail(email, transcript string) error {
 	return nil
 }

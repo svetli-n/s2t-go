@@ -42,16 +42,17 @@ func upload(w http.ResponseWriter, req *http.Request) {
 		log.Fatalf("Failed to convert audio: %v", err)
 	}
 
-	transcript := storage.Transcript{Raw: t, Edited: "", Emails: strings.Split(emails, ","), OrgEmail: orgEmail}
+	//TODO handle unique
+	emailArr := strings.Split(emails, ",")
+
+	transcript := storage.Transcript{Raw: t, Edited: "", Emails: emailArr, OrgEmail: orgEmail}
 	if err = storage.SaveTranscript(transcript); err != nil {
 		log.Fatalf("Failed to save to json: %v", err)
 	}
-	fmt.Println(storage.LoadTranscript())
-	//err = storage.WriteTranscript(t, strings.Split(emails, ","))
-	//if err != nil {
-	//	log.Fatalf("Failed to write transcript: %v", err)
-	//}
-
+	confirmation := storage.Confirmation{Emails: make(map[string]bool), Total: len(emailArr), Done: false}
+	if err = storage.SaveConfirmation(confirmation); err != nil {
+		log.Fatalf("Failed to save to json: %v", err)
+	}
 	w.WriteHeader(http.StatusOK)
 
 }
